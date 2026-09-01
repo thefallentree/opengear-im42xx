@@ -1,0 +1,11 @@
+# Large binaries / vendor artifacts / your own device dumps — never commit
+dl/
+build/
+archive/
+cdk/
+flash-ready/
+*.flash
+*.img
+*.bin
+*.tar.gz
+tools/
