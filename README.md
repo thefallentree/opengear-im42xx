@@ -5,9 +5,18 @@ console server** (Micrel KS8695P, ARM922T / ARMv4T) from Opengear's Custom
 Development Kit — with a container-based build, a byte-for-byte reproducibility
 check against a running unit, and a boot-certification harness.
 
+**The build is fully reproducible and idempotent.** Every source of
+non-determinism is pinned, so re-running it rebuilds the *same* root filesystem
+every time — **byte-for-byte identical** to the firmware Opengear ships (852/852
+files; see [Reproducibility](#reproducibility-the-determinism-traps)). The packed
+container is bit-identical too with `--deterministic`; the default has only a
+harmless fragment-ordering race that never changes the unpacked contents.
+
 This repo is **tooling and documentation only**. It does not contain the CDK or
-any firmware — see [`NOTICE.md`](NOTICE.md). You supply the CDK, a cross toolchain,
-and (optionally) a dump of your own device.
+any firmware — see [`NOTICE.md`](NOTICE.md). You supply the
+**[CDK](https://ftp.opengear.com/download/3rd_party_support_and_scripts/cdk/)**
+and a cross toolchain (both from Opengear's FTP; checksums in that directory's
+`SHASUMS`), and optionally a dump of your own device.
 
 > _Provided as-is, for convenience. No license, no warranty, no support — use at
 > your own risk._
@@ -104,7 +113,10 @@ the widespread "you need a 32-bit VM" advice is wrong; a 64-bit host needs only
 - **`faketime`** is needed to pin build timestamps.
 
 ```sh
-# 1. Fetch a devkit + a cross toolchain from Opengear's FTP into ./dl/ first, then:
+# 1. Download a devkit + a cross toolchain into ./dl/ from Opengear's FTP:
+#      https://ftp.opengear.com/download/3rd_party_support_and_scripts/cdk/
+#      (devkits: OpenGear-IM42xx-<ver>-devkit-<date>.tar.gz; toolchains under cdk/tools/;
+#       verify against cdk/SHASUMS)  — then:
 ./scripts/setup-container.sh dl/OpenGear-IM42xx-<ver>-devkit-<date>.tar.gz
 ```
 
