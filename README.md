@@ -17,6 +17,13 @@ and (optionally) a dump of your own device.
 Don't want to build it yourself? The **[Releases page](../../releases/latest)**
 carries the images below, prebuilt from the CDK and certified, plus `SHA256SUMS`:
 
+> 🛑 **These fit the IM4200 family ONLY** — IM4216 / IM4248 / IMG4216 / IM4004
+> (Opengear product ID `CM41XX`). **Do not flash them on any other model.**
+> In particular the **`cm41xx` boxes (CM4116/CM4148) share the `CM41XX` product
+> ID**, so netflash's product check would *pass* while installing the wrong
+> rootfs — a brick. Confirm your unit is an IM42xx (its web UI / label) before
+> flashing. Unsure? Don't.
+
 | Image | Version | Notes |
 |---|---|---|
 | `im42xx-3.16.6u1.flash` | 3.16.6u1 | Control — unpacks **byte-for-byte identical** to the firmware shipped on the unit |
@@ -252,6 +259,24 @@ is reachable and there is no hidden size cliff at 16 MB−128 KB.
   *short* of `mtd3`. An image between the two sizes flashes cleanly and may not
   boot — `certify-image.sh` gates on the smaller bootloader region.
 
+### Flashing, step by step (web UI)
+
+1. **Verify the download:** `sha256sum -c SHA256SUMS`.
+2. **Stage recovery first** (see below) — `recovery.bin` on a FAT USB stick
+   renamed `image.bin`, or a TFTP host ready.
+3. **Browse to the unit** (`http://<its-ip>`, or `https://` if HTTP is off) and
+   log in as `root`.
+4. **System → Firmware**, choose the `.flash`, and **leave *Firmware Options*
+   blank** — that preserves your config (`-i` there forces a downgrade).
+5. **Start it, and do not cut power.** netflash validates checksum + version +
+   vendor + product, writes `mtd3`, and reboots. A same-series upgrade is back in
+   ~3 min; a **major-version jump** (e.g. 3.16 → 4.1) runs config migration on
+   first boot and can take **8–10 min of silence — do not interrupt it** (that is
+   the one way to actually corrupt config).
+6. If the web UI doesn't answer after a major upgrade, try **`https://`** — the
+   migration may harden HTTP off by default. Confirm the new version under
+   *System → Firmware* and that your serial ports/network survived.
+
 ### The boot chain (U-Boot 1.1.1, decompiled)
 
 `recovery_setup()` runs on every boot and reads the **ERASE button** (KS8695 GPIO
@@ -284,8 +309,16 @@ Enter each by **holding ERASE while powering on**:
 Only a corrupt **`mtd0` bootloader** requires JTAG (20-pin ARM header, OCDemon +
 `arm-elf-gdb`) — and `netflash` never writes `mtd0`/`mtd1`.
 
-**Recommended before any flash:** stage a recovery image (USB `image.bin`, or a
-TFTP host) so a bad flash is a 2-minute recovery, not a brick.
+**Recommended before any flash — stage recovery first.** Grab `recovery.bin`
+from the [release](../../releases/latest) (Opengear's IM42xx recovery image; also
+on Opengear's FTP under `.../end_of_sale_products/recovery/`) and either:
+
+- copy it to the root of a **FAT-formatted USB stick, renamed `image.bin`** — the
+  unit auto-boots it on power-on with no ERASE needed, into a recovery web UI that
+  reflashes `mtd3`; or
+- serve it over TFTP for the ERASE-held network-recovery path above.
+
+Then a bad flash is a 2-minute recovery, not a brick.
 
 ---
 
